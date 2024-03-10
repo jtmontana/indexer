@@ -3,6 +3,7 @@ import tkinter as tk
 from tkinter import filedialog
 from fuzzywuzzy import fuzz
 import re
+import pickle
 
 
 def create_index(directory):
@@ -18,6 +19,17 @@ def create_index(directory):
     global index
     index = i
     return i
+
+def save_index(filename):
+    global index
+    with open(filename, 'wb') as f:
+        pickle.dump(index, f)
+
+def load_index(filename):
+    global index
+    with open(filename, 'rb') as f:
+        index = pickle.load(f)
+    listbox_populate()
 
 def fuzzy_search(text, query, threshold=70):
     result = {}
@@ -77,6 +89,9 @@ def handle_clear():
 def handle_create_index():
     global index
     index = create_index(directory_entry.get())
+    listbox_populate()
+
+def listbox_populate():
     listbox.delete(0, tk.END)
     for line in index:
         listbox.insert(tk.END ,line)
@@ -88,9 +103,17 @@ def handle_listbox_double_click(event):
     # pyperclip.copy(selected_item)  # Copy the item to the clipboard
     os.startfile(selected_item)
 
+
 # Create the GUI window.
 window = tk.Tk()
 window.title("File Indexer")
+
+def on_closing():
+    if index:
+        save_index("quicksave.index")
+    window.destroy()
+
+window.protocol("WM_DELETE_WINDOW", on_closing)
 
 # Variable to hold the index content
 index = []
@@ -129,6 +152,13 @@ window.grid_rowconfigure(2, weight=1)  # Allow row 2 to expand
 window.grid_columnconfigure(0, weight=1)  # Allow column 0 to expand
 
 scrollbar.grid(row=2, column=4, sticky="ns")  # Align scrollbar with listbox
+
+
+#Loads the quicksave on start. If there is no quicksave, index will be empty. 
+try:
+    load_index("quicksave.index")
+except(Exception):
+    index = []
 
 # Load the GUI
 window.mainloop()
