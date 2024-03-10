@@ -103,6 +103,17 @@ def handle_listbox_double_click(event):
     # pyperclip.copy(selected_item)  # Copy the item to the clipboard
     os.startfile(selected_item)
 
+def save_as():
+    filename = filedialog.asksaveasfilename(defaultextension=".index",
+                                              filetypes=[("Index Files", "*.index")])
+    if filename:
+        save_index(filename)
+
+def load():
+    filename = filedialog.askopenfilename(defaultextension=".index",
+                                            filetypes=[("Index Files", "*.index")])
+    if filename:
+        load_index(filename)
 
 # Create the GUI window.
 window = tk.Tk()
@@ -117,6 +128,16 @@ window.protocol("WM_DELETE_WINDOW", on_closing)
 
 # Variable to hold the index content
 index = []
+
+# Create the menu
+menubar = tk.Menu(window)
+window.config(menu=menubar)
+file_menu = tk.Menu(menubar, tearoff=False)
+menubar.add_cascade(label="File", menu=file_menu)
+file_menu.add_command(label="Save As...", command=save_as)
+file_menu.add_command(label="Load...", command=load)
+file_menu.add_command(label="Quit", command=on_closing)
+
 
 # Create the GUI widgets.
 directory_label = tk.Label(window, text="Directory:")
