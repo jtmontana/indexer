@@ -141,6 +141,7 @@ def load():
 window = tk.Tk()
 window.title("File Indexer")
 window.minsize(1600, 1000)
+window.iconbitmap("indexer_icon.ico")
 
 def on_closing():
     if index:
