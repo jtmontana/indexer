@@ -118,6 +118,7 @@ def load():
 # Create the GUI window.
 window = tk.Tk()
 window.title("File Indexer")
+window.minsize(1600, 1000)
 
 def on_closing():
     if index:
