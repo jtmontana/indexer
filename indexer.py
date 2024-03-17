@@ -22,14 +22,25 @@ def create_index(directory):
 
 def save_index(filename):
     global index
+    global index_data
+    index_data = {
+        "index": index,
+        "directory": directory,
+        "search": search
+    }
     with open(filename, 'wb') as f:
-        pickle.dump(index, f)
+        pickle.dump(index_data, f)
 
 def load_index(filename):
-    global index
+    global index, directory, search
+    global index_data
     with open(filename, 'rb') as f:
-        index = pickle.load(f)
+        index_data = pickle.load(f)
+        index = index_data["index"]
+        directory = index_data["directory"]
+        search = index_data["search"]
     listbox_populate()
+    entry_populate()
 
 def fuzzy_search(text, query, threshold=70):
     result = {}
@@ -65,6 +76,9 @@ def preprocess_filepath(filepath):
 # Functions to handle button clicks. 
 def handle_search():
     results = []
+    global search
+    search = search_entry.get()
+
     for line in index:
         result = fuzzy_search(line, search_entry.get())
         if result:
@@ -88,13 +102,21 @@ def handle_clear():
 
 def handle_create_index():
     global index
+    global directory
+    directory = directory_entry.get()
     index = create_index(directory_entry.get())
     listbox_populate()
+    entry_populate()
 
 def listbox_populate():
     listbox.delete(0, tk.END)
     for line in index:
         listbox.insert(tk.END ,line)
+
+def entry_populate():
+    directory_entry.delete(0, tk.END)
+    search_entry.delete(0, tk.END)
+    directory_entry.insert(0, directory)
 
 def handle_listbox_double_click(event):
     """Copies the selected item in the listbox to the clipboard."""
@@ -127,8 +149,10 @@ def on_closing():
 
 window.protocol("WM_DELETE_WINDOW", on_closing)
 
-# Variable to hold the index content
+# Variables to hold the index content, last search, and path
 index = []
+search = ""
+directory = ""
 
 # Create the menu
 menubar = tk.Menu(window)
