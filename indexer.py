@@ -27,6 +27,7 @@ def load_index(filename):
         search = index_data["search"]
     listbox_populate()
     entry_populate()
+    update_info_bar()
 
 def fuzzy_search(text, query, threshold=70):
     result = {}
@@ -86,6 +87,10 @@ def handle_clear():
         listbox.insert(tk.END, line)
     search_entry.delete(0, tk.END)
 
+# Update the info bar when the index is updated
+def update_info_bar():
+    info_bar.config(text=f"Total files: {len(index)}")
+
 def handle_create_index():
     global index
     global directory
@@ -106,7 +111,7 @@ def handle_create_index():
     
     # Create the index
     index = create_index(directory_entry.get(), count_var, loading_popup)
-    
+    update_info_bar()
     # Close the loading popup
     loading_popup.destroy()
     
@@ -126,6 +131,7 @@ def create_index(directory, count_var, loading_popup):
             count += 1
             count_var.set(f"Files indexed: {count}")  # Update the count
             loading_popup.update()  # Update the popup to show the new count
+    update_info_bar()
     return i
 
 def listbox_populate():
@@ -202,6 +208,9 @@ scrollbar.config(command=listbox.yview)
 # Add a binding for clicking on listbox items
 listbox.bind('<Double-Button-1>', handle_listbox_double_click)
 search_entry.bind('<Return>', handle_search_return)
+# Create the info bar
+info_bar = tk.Label(window, text="Total files: 0", anchor="e")
+
 
 # Create the GUI layout.
 window.grid_columnconfigure(0, weight=0)
@@ -222,6 +231,8 @@ window.grid_rowconfigure(2, weight=1)  # Allow row 2 to expand
 
 scrollbar.grid(row=2, column=4, sticky="ns")  # Align scrollbar with listbox
 
+# Place the info bar at the bottom of the window
+info_bar.grid(row=3, column=0, columnspan=5, sticky="ew")
 
 #Loads the quicksave on start. If there is no quicksave, index will be empty. 
 try:
