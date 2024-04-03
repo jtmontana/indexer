@@ -6,20 +6,6 @@ import re
 import pickle
 
 
-def create_index(directory):
-    """Creates a text-based index of all files in the given directory."""
-
-    i = []
-    for root, dirs, files in os.walk(directory):
-        for filename in files:
-            filepath = os.path.join(root, filename)
-            filepath = filepath.replace('/', os.sep)
-            filepath = filepath.replace('\\', os.sep)
-            i.append(filepath)
-    global index
-    index = i
-    return i
-
 def save_index(filename):
     global index
     global index_data
@@ -108,18 +94,39 @@ def handle_create_index():
     # Create a loading popup
     loading_popup = tk.Toplevel(window)
     loading_popup.title("Loading...")
-    loading_label = tk.Label(loading_popup, text="Creating index, please wait...")
-    loading_label.pack()
-    loading_popup.update()  # Update the popup to make it visible
+    loading_popup.geometry("200x200")  # Set the size of the popup
+    
+    # Create a StringVar to hold the count of files indexed
+    count_var = tk.StringVar()
+    count_var.set("Files indexed: 0")
+    
+    # Create a label to display the count
+    count_label = tk.Label(loading_popup, textvariable=count_var)
+    count_label.pack(pady=20)  # Add some padding
     
     # Create the index
-    index = create_index(directory_entry.get())
+    index = create_index(directory_entry.get(), count_var, loading_popup)
     
     # Close the loading popup
     loading_popup.destroy()
     
     listbox_populate()
     entry_populate()
+
+def create_index(directory, count_var, loading_popup):
+    """Creates a text-based index of all files in the given directory."""
+    i = []
+    count = 0
+    for root, dirs, files in os.walk(directory):
+        for filename in files:
+            filepath = os.path.join(root, filename)
+            filepath = filepath.replace('/', os.sep)
+            filepath = filepath.replace('\\', os.sep)
+            i.append(filepath)
+            count += 1
+            count_var.set(f"Files indexed: {count}")  # Update the count
+            loading_popup.update()  # Update the popup to show the new count
+    return i
 
 def listbox_populate():
     listbox.delete(0, tk.END)
