@@ -104,7 +104,20 @@ def handle_create_index():
     global index
     global directory
     directory = directory_entry.get()
+    
+    # Create a loading popup
+    loading_popup = tk.Toplevel(window)
+    loading_popup.title("Loading...")
+    loading_label = tk.Label(loading_popup, text="Creating index, please wait...")
+    loading_label.pack()
+    loading_popup.update()  # Update the popup to make it visible
+    
+    # Create the index
     index = create_index(directory_entry.get())
+    
+    # Close the loading popup
+    loading_popup.destroy()
+    
     listbox_populate()
     entry_populate()
 
