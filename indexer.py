@@ -159,6 +159,18 @@ def handle_listbox_double_click(event):
     # pyperclip.copy(selected_item)  # Copy the item to the clipboard
     os.startfile(selected_item)
 
+def delete_directory():
+    selected_index = directory_listbox.curselection()
+    if selected_index:
+        directory_listbox.delete(selected_index)
+
+def show_directory_menu(event):
+    selected_index = directory_listbox.nearest(event.y)
+    directory_listbox.selection_clear(0, tk.END)
+    directory_listbox.selection_set(selected_index)
+    directory_listbox.activate(selected_index)
+    directory_menu.post(event.x_root, event.y_root)
+
 def save_as():
     filename = filedialog.asksaveasfilename(defaultextension=".index",
                                               filetypes=[("Index Files", "*.index")])
@@ -236,11 +248,17 @@ search_entry.grid(row=1, column=1, sticky="ew")
 search_button.grid(row=1, column=2, pady=10)
 clear_button.grid(row=1, column=3, pady=10)
 
-# **Key changes for resizing the listbox:**
 listbox.grid(row=2, column=0, columnspan=4, sticky="nsew", padx=5, pady=5)  # Fill all available space
 window.grid_rowconfigure(2, weight=1)  # Allow row 2 to expand
 
 scrollbar.grid(row=2, column=4, sticky="ns")  # Align scrollbar with listbox
+
+# Create the right-click menu for directory_listbox
+directory_menu = tk.Menu(window, tearoff=0)
+directory_menu.add_command(label="Delete", command=delete_directory)
+
+# Bind the right-click event to show the menu
+directory_listbox.bind("<Button-3>", show_directory_menu)
 
 # Place the info bar at the bottom of the window
 info_bar.grid(row=3, column=0, columnspan=5, sticky="ew")
