@@ -26,7 +26,7 @@ def load_index(filename):
         directory = index_data["directory"]
         search = index_data["search"]
     listbox_populate()
-    entry_populate()
+    directory_listbox_populate()
     update_info_bar()
 
 def fuzzy_search(text, query, threshold=70):
@@ -94,8 +94,8 @@ def update_info_bar():
 def handle_create_index():
     global index
     global directory
-    directory = directory_entry.get()
-    
+    directory = directory_listbox.get(0,directory_listbox.size())
+
     # Create a loading popup
     loading_popup = tk.Toplevel(window)
     loading_popup.title("Loading...")
@@ -110,13 +110,15 @@ def handle_create_index():
     count_label.pack(pady=20)  # Add some padding
     
     # Create the index
-    index = create_index(directory_entry.get(), count_var, loading_popup)
+    index = []
+    for d in directory:
+        index.extend(create_index(d, count_var, loading_popup))
     update_info_bar()
     # Close the loading popup
     loading_popup.destroy()
     
     listbox_populate()
-    entry_populate()
+
 
 def create_index(directory, count_var, loading_popup):
     """Creates a text-based index of all files in the given directory."""
@@ -137,12 +139,18 @@ def create_index(directory, count_var, loading_popup):
 def listbox_populate():
     listbox.delete(0, tk.END)
     for line in index:
-        listbox.insert(tk.END ,line)
+        listbox.insert(tk.END, line)
+
+def directory_listbox_populate():
+    directory_listbox.delete(0, tk.END)
+    for d in directory:
+        directory_listbox.insert(tk.END, d)
 
 def entry_populate():
-    directory_entry.delete(0, tk.END)
+    directory_listbox.delete(0, tk.END)
     search_entry.delete(0, tk.END)
-    directory_entry.insert(0, directory)
+    for d in directory:
+        directory_listbox.insert(tk.END, d)
 
 def handle_listbox_double_click(event):
     """Copies the selected item in the listbox to the clipboard."""
@@ -194,7 +202,7 @@ file_menu.add_command(label="Quit", command=on_closing)
 # Create the GUI widgets.
 directory_label = tk.Label(window, text="Directory:")
 directory_var = tk.StringVar()
-directory_entry = tk.Entry(window, text=directory_var)
+directory_listbox = tk.Listbox(window)
 
 browse_button = tk.Button(window, text="Browse...", command=lambda: directory_var.set(filedialog.askdirectory()))
 index_button = tk.Button(window, text="Create Index", command=handle_create_index)
@@ -217,7 +225,10 @@ window.grid_columnconfigure(0, weight=0)
 window.grid_columnconfigure(1, weight=1)
 
 directory_label.grid(row=0, column=0, sticky="w")
-directory_entry.grid(row=0, column=1, sticky="ew")
+add_directory_button = tk.Button(window, text="Add Directory", command=lambda: directory_listbox.insert(tk.END, filedialog.askdirectory()))
+directory_listbox.grid(row=0, column=1, sticky="ew")
+add_directory_button.grid(row=0, column=2, pady=10)
+index_button.grid(row=0, column=3, pady=10)
 browse_button.grid(row=0, column=2, pady=10)
 index_button.grid(row=0, column=3, pady=10)
 search_label.grid(row=1, column=0, sticky="w")
