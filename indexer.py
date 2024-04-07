@@ -187,7 +187,10 @@ def load():
 window = tk.Tk()
 window.title("File Indexer")
 window.minsize(1600, 1000)
-window.iconbitmap("indexer_icon.ico")
+try:
+    window.iconbitmap("indexer_icon.ico")
+except Exception:
+    print(f'Unable to set icon')
 
 def on_closing():
     if index:
