@@ -31,7 +31,6 @@ def load_index(filename):
         index = index_data["index"]
         directory = index_data["directory"]
         search = index_data["search"]
-        # timestamp = index_data["timestamp"]
         timestamp = index_data.get("timestamp", "N/A")
     listbox_populate()
     directory_listbox_populate()
@@ -98,6 +97,12 @@ def handle_clear():
 # Update the info bar when the index is updated
 def update_info_bar():
     info_bar.config(text=f"Total files: {len(index)}")
+
+def handle_add_directory():
+    new_directory = filedialog.askdirectory()
+    directory_listbox.insert(tk.END, new_directory)
+    global directory
+    directory = directory_listbox.get(0,directory_listbox.size())
 
 def handle_create_index():
     global index
@@ -221,10 +226,8 @@ file_menu.add_command(label="Quit", command=on_closing)
 
 # Create the GUI widgets.
 directory_label = tk.Label(window, text="Directory:")
-directory_var = tk.StringVar()
 directory_listbox = tk.Listbox(window)
 
-browse_button = tk.Button(window, text="Browse...", command=lambda: directory_var.set(filedialog.askdirectory()))
 index_button = tk.Button(window, text="Create Index", command=handle_create_index)
 search_label = tk.Label(window, text="Search:")
 search_entry = tk.Entry(window)
@@ -245,11 +248,10 @@ window.grid_columnconfigure(0, weight=0)
 window.grid_columnconfigure(1, weight=1)
 
 directory_label.grid(row=0, column=0, sticky="w")
-add_directory_button = tk.Button(window, text="Add Directory", command=lambda: directory_listbox.insert(tk.END, filedialog.askdirectory()))
+add_directory_button = tk.Button(window, text="Add Directory", command=handle_add_directory)
 directory_listbox.grid(row=0, column=1, sticky="ew")
 add_directory_button.grid(row=0, column=2, pady=10)
 index_button.grid(row=0, column=3, pady=10)
-browse_button.grid(row=0, column=2, pady=10)
 index_button.grid(row=0, column=3, pady=10)
 search_label.grid(row=1, column=0, sticky="w")
 search_entry.grid(row=1, column=1, sticky="ew")
