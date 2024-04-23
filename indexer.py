@@ -2,29 +2,37 @@ import os
 import tkinter as tk
 from tkinter import filedialog
 from fuzzywuzzy import fuzz
+from datetime import datetime
 import re
 import pickle
 
 
 def save_index(filename):
-    global index
-    global index_data
+    global index, index_data, timestamp
+    
+    # Get the current timestamp
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
     index_data = {
         "index": index,
         "directory": directory,
-        "search": search
+        "search": search,
+        "timestamp": timestamp  # Add the timestamp to the index_data dictionary
     }
+    
     with open(filename, 'wb') as f:
         pickle.dump(index_data, f)
 
 def load_index(filename):
-    global index, directory, search
+    global index, directory, search, timestamp
     global index_data
     with open(filename, 'rb') as f:
         index_data = pickle.load(f)
         index = index_data["index"]
         directory = index_data["directory"]
         search = index_data["search"]
+        # timestamp = index_data["timestamp"]
+        timestamp = index_data.get("timestamp", "N/A")
     listbox_populate()
     directory_listbox_populate()
     update_info_bar()
@@ -156,7 +164,6 @@ def handle_listbox_double_click(event):
     """Copies the selected item in the listbox to the clipboard."""
     selected_index = listbox.curselection()[0]  # Get the index of the selected item
     selected_item = listbox.get(selected_index)  # Get the text of the selected item
-    # pyperclip.copy(selected_item)  # Copy the item to the clipboard
     os.startfile(selected_item)
 
 def delete_directory():
@@ -200,6 +207,7 @@ window.protocol("WM_DELETE_WINDOW", on_closing)
 index = []
 search = ""
 directory = ""
+timestamp = ""
 
 # Create the menu
 menubar = tk.Menu(window)
