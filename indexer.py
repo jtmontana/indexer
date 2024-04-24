@@ -10,9 +10,6 @@ import pickle
 def save_index(filename):
     global index, index_data, timestamp
     
-    # Get the current timestamp
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    
     index_data = {
         "index": index,
         "directory": directory,
@@ -96,7 +93,7 @@ def handle_clear():
 
 # Update the info bar when the index is updated
 def update_info_bar():
-    info_bar.config(text=f"Total files: {len(index)}")
+    info_bar.config(text=f"Index Date: {timestamp}  Total files: {len(index)}")
 
 def handle_add_directory():
     new_directory = filedialog.askdirectory()
@@ -105,8 +102,8 @@ def handle_add_directory():
     directory = directory_listbox.get(0,directory_listbox.size())
 
 def handle_create_index():
-    global index
-    global directory
+    global index, directory, timestamp
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     directory = directory_listbox.get(0,directory_listbox.size())
 
     # Create a loading popup
@@ -126,11 +123,10 @@ def handle_create_index():
     index = []
     for d in directory:
         index.extend(create_index(d, count_var, loading_popup))
-    update_info_bar()
     # Close the loading popup
     loading_popup.destroy()
-    
     listbox_populate()
+    update_info_bar()
 
 
 def create_index(directory, count_var, loading_popup):
@@ -146,7 +142,6 @@ def create_index(directory, count_var, loading_popup):
             count += 1
             count_var.set(f"Files indexed: {count}")  # Update the count
             loading_popup.update()  # Update the popup to show the new count
-    update_info_bar()
     return i
 
 def listbox_populate():
