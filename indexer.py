@@ -1,11 +1,12 @@
 import os
 import tkinter as tk
-from tkinter import filedialog
+from tkinter import filedialog, messagebox
 from fuzzywuzzy import fuzz
 from datetime import datetime
 import re
 import pickle
-
+import subprocess
+import pyperclip
 
 def save_index(filename):
     global index, index_data, timestamp
@@ -144,7 +145,7 @@ def handle_create_index():
     update_info_bar() 
 
     # Re-enable the "Create Index" button
-    index_button.config(state=tk.NORMAL, )
+    index_button.config(state=tk.NORMAL)
 
 def create_index(directories, count_var, loading_popup):  
     """Creates a text-based index of all files in the given directories."""  
@@ -179,10 +180,11 @@ def entry_populate():
         directory_listbox.insert(tk.END, d)
 
 def handle_listbox_double_click(event):
-    """Copies the selected item in the listbox to the clipboard."""
-    selected_index = listbox.curselection()[0]  # Get the index of the selected item
-    selected_item = listbox.get(selected_index)  # Get the text of the selected item
-    os.startfile(selected_item)
+    """Opens the selected file in its default program."""
+    selected_index = listbox.curselection()
+    if selected_index:
+        selected_item = listbox.get(selected_index[0])
+        os.startfile(selected_item)
 
 def delete_directory():
     selected_index = directory_listbox.curselection()
@@ -207,6 +209,44 @@ def load():
                                             filetypes=[("Index Files", "*.index")])
     if filename:
         load_index(filename)
+
+def show_listbox_menu(event):
+    """Shows the right-click menu for listbox items."""
+    selected_index = listbox.nearest(event.y)
+    listbox.selection_clear(0, tk.END)
+    listbox.selection_set(selected_index)
+    listbox.activate(selected_index)
+    listbox_menu.post(event.x_root, event.y_root)
+
+def open_file():
+    """Opens the selected file in its default program."""
+    selected_index = listbox.curselection()
+    if selected_index:
+        selected_item = listbox.get(selected_index[0])
+        os.startfile(selected_item)
+
+def open_parent_directory():
+    """Opens the parent directory of the selected file."""
+    selected_index = listbox.curselection()
+    if selected_index:
+        selected_item = listbox.get(selected_index[0])
+        parent_dir = os.path.dirname(selected_item)
+        subprocess.Popen(f'explorer "{parent_dir}"')
+
+def copy_file_path():
+    """Copies the full path of the selected file to the clipboard."""
+    selected_index = listbox.curselection()
+    if selected_index:
+        selected_item = listbox.get(selected_index[0])
+        pyperclip.copy(selected_item)
+
+def copy_parent_directory_path():
+    """Copies the path of the parent directory of the selected file to the clipboard."""
+    selected_index = listbox.curselection()
+    if selected_index:
+        selected_item = listbox.get(selected_index[0])
+        parent_dir = os.path.dirname(selected_item)
+        pyperclip.copy(parent_dir)
 
 # Create the GUI window.
 window = tk.Tk()
@@ -240,7 +280,6 @@ file_menu.add_command(label="Save As...", command=save_as)
 file_menu.add_command(label="Load...", command=load)
 file_menu.add_command(label="Quit", command=on_closing)
 
-
 # Create the GUI widgets.
 directory_label = tk.Label(window, text="Directory:")
 directory_listbox = tk.Listbox(window)
@@ -259,7 +298,6 @@ search_entry.bind('<Return>', handle_search_return)
 # Create the info bar
 info_bar = tk.Label(window, text="Total files: 0", anchor="e")
 
-
 # Create the GUI layout.
 window.grid_columnconfigure(0, weight=0)
 window.grid_columnconfigure(1, weight=1)
@@ -268,7 +306,6 @@ directory_label.grid(row=0, column=0, sticky="w")
 add_directory_button = tk.Button(window, text="Add Directory", command=handle_add_directory)
 directory_listbox.grid(row=0, column=1, sticky="ew")
 add_directory_button.grid(row=0, column=2, pady=10)
-index_button.grid(row=0, column=3, pady=10)
 index_button.grid(row=0, column=3, pady=10)
 search_label.grid(row=1, column=0, sticky="w")
 search_entry.grid(row=1, column=1, sticky="ew")
@@ -290,6 +327,16 @@ directory_listbox.bind("<Button-3>", show_directory_menu)
 # Place the info bar at the bottom of the window
 info_bar.grid(row=3, column=0, columnspan=5, sticky="ew")
 
+# Create the right-click menu for listbox
+listbox_menu = tk.Menu(window, tearoff=0)
+listbox_menu.add_command(label="Open File", command=open_file)
+listbox_menu.add_command(label="Open Parent Directory", command=open_parent_directory)
+listbox_menu.add_command(label="Copy File Path", command=copy_file_path)
+listbox_menu.add_command(label="Copy Parent Directory Path", command=copy_parent_directory_path)
+
+# Bind the right-click event to show the menu for listbox
+listbox.bind("<Button-3>", show_listbox_menu)
+
 #Loads the quicksave on start. If there is no quicksave, index will be empty. 
 try:
     load_index("quicksave.index")
@@ -298,4 +345,3 @@ except(Exception):
 
 # Load the GUI
 window.mainloop()
-
