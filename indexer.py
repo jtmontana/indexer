@@ -23,12 +23,20 @@ def save_index(filename):
 def load_index(filename):
     global index, directory, search, timestamp
     global index_data
-    with open(filename, 'rb') as f:
-        index_data = pickle.load(f)
-        index = index_data["index"]
-        directory = index_data["directory"]
-        search = index_data["search"]
-        timestamp = index_data.get("timestamp", "N/A")
+    try:
+        with open(filename, 'rb') as f:
+            index_data = pickle.load(f)
+            index = index_data["index"]
+            directory = index_data["directory"]
+            search = index_data["search"]
+            timestamp = index_data.get("timestamp", "N/A")
+    except (FileNotFoundError, pickle.UnpicklingError, KeyError):
+        # Handle the case where the file is not found or has an unexpected format
+        tk.messagebox.showerror("Error", "Failed to load the index file.")
+        index = []
+        directory = []
+        search = ""
+        timestamp = ""
     listbox_populate()
     directory_listbox_populate()
     update_info_bar()
@@ -101,48 +109,58 @@ def handle_add_directory():
     global directory
     directory = directory_listbox.get(0,directory_listbox.size())
 
-def handle_create_index():
-    global index, directory, timestamp
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    directory = directory_listbox.get(0,directory_listbox.size())
-
-    # Create a loading popup
-    loading_popup = tk.Toplevel(window)
-    loading_popup.title("Loading...")
-    loading_popup.geometry("200x200")  # Set the size of the popup
+def handle_create_index():    
+    global index, directory, timestamp, total_files_indexed
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")    
+    directory = directory_listbox.get(0, tk.END)    
     
-    # Create a StringVar to hold the count of files indexed
-    count_var = tk.StringVar()
-    count_var.set("Files indexed: 0")
-    
-    # Create a label to display the count
-    count_label = tk.Label(loading_popup, textvariable=count_var)
-    count_label.pack(pady=20)  # Add some padding
-    
-    # Create the index
-    index = []
-    for d in directory:
-        index.extend(create_index(d, count_var, loading_popup))
-    # Close the loading popup
-    loading_popup.destroy()
-    listbox_populate()
-    update_info_bar()
+    # Disable the "Create Index" button
+    index_button.config(state=tk.DISABLED)
 
+    # Create a loading popup  
+    loading_popup = tk.Toplevel(window)  
+    loading_popup.title("Loading...")  
+    loading_popup.geometry("200x200")  # Set the size of the popup  
+    
+    # Create a StringVar to hold the count of files indexed  
+    count_var = tk.StringVar()  
+    count_var.set("Files indexed: 0")  
+    
+    # Create a label to display the count  
+    count_label = tk.Label(loading_popup, textvariable=count_var, background="#FFFFFF")  
+    count_label.pack(pady=20)  # Add some padding  
+    
+    # Clear the old index
+    index = []  
+    total_files_indexed = 0  
 
-def create_index(directory, count_var, loading_popup):
-    """Creates a text-based index of all files in the given directory."""
-    i = []
-    count = 0
-    for root, dirs, files in os.walk(directory):
-        for filename in files:
-            filepath = os.path.join(root, filename)
-            filepath = filepath.replace('/', os.sep)
-            filepath = filepath.replace('\\', os.sep)
-            i.append(filepath)
-            count += 1
-            count_var.set(f"Files indexed: {count}")  # Update the count
-            loading_popup.update()  # Update the popup to show the new count
-    return i
+    # Start indexing each directory
+    for d in directory:  
+        index.extend(create_index([d], count_var, loading_popup))  
+    
+    # Close the loading popup  
+    loading_popup.destroy()  
+    listbox_populate()  
+    update_info_bar() 
+
+    # Re-enable the "Create Index" button
+    index_button.config(state=tk.NORMAL, )
+
+def create_index(directories, count_var, loading_popup):  
+    """Creates a text-based index of all files in the given directories."""  
+    global total_files_indexed
+    index_list = []  
+    
+    for directory in directories:        
+        for root, dirs, files in os.walk(directory):  
+            for filename in files:  
+                filepath = os.path.join(root, filename).replace('/', os.sep).replace('\\', os.sep)  
+                index_list.append(filepath)  
+                total_files_indexed += 1  
+                count_var.set(f"Files Indexed: {total_files_indexed}")        
+                loading_popup.update_idletasks()  
+    
+    return index_list
 
 def listbox_populate():
     listbox.delete(0, tk.END)
@@ -206,11 +224,12 @@ def on_closing():
 
 window.protocol("WM_DELETE_WINDOW", on_closing)
 
-# Variables to hold the index content, last search, and path
+# Global variables to hold the index content, last search, and path
 index = []
 search = ""
 directory = ""
 timestamp = ""
+total_files_indexed = 0
 
 # Create the menu
 menubar = tk.Menu(window)
