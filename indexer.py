@@ -251,7 +251,7 @@ def copy_parent_directory_path():
 # Create the GUI window.
 window = tk.Tk()
 window.title("File Indexer")
-window.minsize(1600, 1000)
+window.minsize(1200, 800)
 try:
     window.iconbitmap("indexer_icon.ico")
 except Exception:
