@@ -9,6 +9,12 @@ import subprocess
 import pyperclip
 
 def save_index(filename):
+    """
+    Save the current index data to a file.
+
+    Args:
+        filename (str): The path to the file where the index data will be saved.
+    """
     global index, index_data, timestamp
     
     index_data = {
@@ -22,6 +28,16 @@ def save_index(filename):
         pickle.dump(index_data, f)
 
 def load_index(filename):
+    """
+    Load index data from a file.
+
+    Args:
+        filename (str): The path to the file containing the index data.
+
+    This function attempts to load the index data from the specified file.
+    If the file is not found or has an unexpected format, it initializes
+    empty data structures and updates the GUI accordingly.
+    """
     global index, directory, search, timestamp
     global index_data
     try:
@@ -31,18 +47,42 @@ def load_index(filename):
             directory = index_data["directory"]
             search = index_data["search"]
             timestamp = index_data.get("timestamp", "N/A")
-    except (FileNotFoundError, pickle.UnpicklingError, KeyError):
-        # Handle the case where the file is not found or has an unexpected format
-        tk.messagebox.showerror("Error", "Failed to load the index file.")
+    except FileNotFoundError:
+        print("No existing index found. A new index will be created when you add directories and create an index.")
         index = []
         directory = []
         search = ""
         timestamp = ""
+    except (pickle.UnpicklingError, KeyError):
+        tk.messagebox.showerror("Error", "The index file is corrupted or in an unexpected format. A new index will be created.")
+        index = []
+        directory = []
+        search = ""
+        timestamp = ""
+    except Exception as e:
+        tk.messagebox.showerror("Error", f"An unexpected error occurred while loading the index: {str(e)}")
+        index = []
+        directory = []
+        search = ""
+        timestamp = ""
+    
     listbox_populate()
     directory_listbox_populate()
     update_info_bar()
 
 def fuzzy_search(text, query, threshold=70):
+    """
+    Perform a fuzzy search on the given text.
+
+    Args:
+        text (str): The text to search in.
+        query (str): The search query.
+        threshold (int, optional): The minimum match score to consider. Defaults to 70.
+
+    Returns:
+        dict or None: A dictionary containing the match score and text if a match is found,
+                      or None if no match is found.
+    """
     result = {}
     # Fuzzy search logic  
     match_score = max(
@@ -75,6 +115,13 @@ def preprocess_filepath(filepath):
 
 # Functions to handle button clicks. 
 def handle_search():
+    """
+    Handle the search action when the search button is clicked.
+
+    This function retrieves the search query from the entry field,
+    performs a fuzzy search on the index, and updates the listbox
+    with the search results.
+    """
     results = []
     global search
     search = search_entry.get()
@@ -95,22 +142,45 @@ def handle_search_return(event):
     handle_search()
 
 def handle_clear():
+    """
+    Clear the search results and reset the listbox to show all indexed files.
+
+    This function is called when the clear button is clicked.
+    """
     listbox.delete(0, tk.END)
     for line in index:
         listbox.insert(tk.END, line)
     search_entry.delete(0, tk.END)
 
-# Update the info bar when the index is updated
 def update_info_bar():
+    """
+    Update the information bar with the current index statistics.
+
+    This function updates the displayed information about the index date
+    and the total number of files in the index.
+    """
     info_bar.config(text=f"Index Date: {timestamp}  Total files: {len(index)}")
 
 def handle_add_directory():
+    """
+    Handle the action of adding a new directory to the index.
+
+    This function opens a directory selection dialog and adds the
+    selected directory to the list of directories to be indexed.
+    """
     new_directory = filedialog.askdirectory()
     directory_listbox.insert(tk.END, new_directory)
     global directory
     directory = directory_listbox.get(0,directory_listbox.size())
 
 def handle_create_index():    
+    """
+    Handle the action of creating the index.
+
+    This function initiates the indexing process for all added directories,
+    updates the GUI with a loading popup, and refreshes the listbox and
+    info bar once the indexing is complete.
+    """
     global index, directory, timestamp, total_files_indexed
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")    
     directory = directory_listbox.get(0, tk.END)    
