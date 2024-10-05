@@ -1,4 +1,5 @@
 import os
+import sys
 import tkinter as tk
 from tkinter import filedialog, messagebox
 from fuzzywuzzy import fuzz
@@ -41,7 +42,8 @@ def load_index(filename):
     global index, directory, search, timestamp
     global index_data
     try:
-        with open(filename, 'rb') as f:
+        quicksave_path = os.path.join(os.path.dirname(sys.executable), "quicksave.index")
+        with open(quicksave_path, 'rb') as f:
             index_data = pickle.load(f)
             index = index_data["index"]
             directory = index_data["directory"]
@@ -329,7 +331,8 @@ except Exception:
 
 def on_closing():
     if index:
-        save_index("quicksave.index")
+        quicksave_path = os.path.join(os.path.dirname(sys.executable), "quicksave.index")
+        save_index(quicksave_path)
     window.destroy()
 
 window.protocol("WM_DELETE_WINDOW", on_closing)
@@ -409,8 +412,9 @@ listbox.bind("<Button-3>", show_listbox_menu)
 
 #Loads the quicksave on start. If there is no quicksave, index will be empty. 
 try:
-    load_index("quicksave.index")
-except(Exception):
+    quicksave_path = os.path.join(os.path.dirname(sys.executable), "quicksave.index")
+    load_index(quicksave_path)
+except Exception:
     index = []
 
 # Load the GUI
