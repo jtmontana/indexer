@@ -42,8 +42,7 @@ def load_index(filename):
     global index, directory, search, timestamp
     global index_data
     try:
-        quicksave_path = os.path.join(os.path.dirname(sys.executable), "quicksave.index")
-        with open(quicksave_path, 'rb') as f:
+        with open(filename, 'rb') as f:
             index_data = pickle.load(f)
             index = index_data["index"]
             directory = index_data["directory"]
@@ -193,15 +192,34 @@ def handle_create_index():
     # Create a loading popup  
     loading_popup = tk.Toplevel(window)  
     loading_popup.title("Loading...")  
-    loading_popup.geometry("200x200")  # Set the size of the popup  
+    loading_popup.geometry("300x200")  # Set the size of the popup
+    
+    # Make sure the popup has well-contrasted colors in both light and dark mode
+    loading_popup.configure(background="#f0f0f0")  # Light gray background for the entire popup
     
     # Create a StringVar to hold the count of files indexed  
     count_var = tk.StringVar()  
     count_var.set("Files indexed: 0")  
     
-    # Create a label to display the count  
-    count_label = tk.Label(loading_popup, textvariable=count_var, background="#FFFFFF")  
-    count_label.pack(pady=20)  # Add some padding  
+    # Create a label to display the count with explicit foreground and background colors
+    count_label = tk.Label(
+        loading_popup, 
+        textvariable=count_var, 
+        background="#f0f0f0",  # Light gray background
+        foreground="#000000",  # Black text
+        font=("Arial", 12)     # Larger, more readable font
+    )
+    count_label.pack(pady=40)  # Add more padding for visibility
+    
+    # Add a progress message
+    progress_label = tk.Label(
+        loading_popup,
+        text="Please wait while your files are being indexed...",
+        background="#f0f0f0",
+        foreground="#000000",
+        font=("Arial", 10)
+    )
+    progress_label.pack(pady=10)
     
     # Clear the old index
     index = []  
@@ -218,7 +236,7 @@ def handle_create_index():
 
     # Re-enable the "Create Index" button
     index_button.config(state=tk.NORMAL)
-
+    
 def create_index(directories, count_var, loading_popup):  
     """Creates a text-based index of all files in the given directories."""  
     global total_files_indexed
@@ -256,7 +274,12 @@ def handle_listbox_double_click(event):
     selected_index = listbox.curselection()
     if selected_index:
         selected_item = listbox.get(selected_index[0])
-        os.startfile(selected_item)
+        if sys.platform == "win32":
+            os.startfile(selected_item)
+        elif sys.platform == "darwin":  # macOS
+            subprocess.call(["open", selected_item])
+        else:  # Linux
+            subprocess.call(["xdg-open", selected_item])
 
 def delete_directory():
     selected_index = directory_listbox.curselection()
@@ -268,6 +291,7 @@ def show_directory_menu(event):
     directory_listbox.selection_clear(0, tk.END)
     directory_listbox.selection_set(selected_index)
     directory_listbox.activate(selected_index)
+    # Use Button-2 for Mac, Button-3 for Windows/Linux
     directory_menu.post(event.x_root, event.y_root)
 
 def save_as():
@@ -290,12 +314,24 @@ def show_listbox_menu(event):
     listbox.activate(selected_index)
     listbox_menu.post(event.x_root, event.y_root)
 
+def get_quicksave_path():
+    # Use user's home directory instead of sys.executable
+    user_home = os.path.expanduser("~")
+    app_dir = os.path.join(user_home, ".fileindexer")
+    os.makedirs(app_dir, exist_ok=True)  # Create dir if doesn't exist
+    return os.path.join(app_dir, "quicksave.index")
+
 def open_file():
     """Opens the selected file in its default program."""
     selected_index = listbox.curselection()
     if selected_index:
         selected_item = listbox.get(selected_index[0])
-        os.startfile(selected_item)
+        if sys.platform == "win32":
+            os.startfile(selected_item)
+        elif sys.platform == "darwin":  # macOS
+            subprocess.call(["open", selected_item])
+        else:  # Linux
+            subprocess.call(["xdg-open", selected_item])
 
 def open_parent_directory():
     """Opens the parent directory of the selected file."""
@@ -303,7 +339,12 @@ def open_parent_directory():
     if selected_index:
         selected_item = listbox.get(selected_index[0])
         parent_dir = os.path.dirname(selected_item)
-        subprocess.Popen(f'explorer "{parent_dir}"')
+        if sys.platform == "win32":
+            subprocess.Popen(f'explorer "{parent_dir}"')
+        elif sys.platform == "darwin":  # macOS
+            subprocess.call(["open", parent_dir])
+        else:  # Linux
+            subprocess.call(["xdg-open", parent_dir])
 
 def copy_file_path():
     """Copies the full path of the selected file to the clipboard."""
@@ -331,7 +372,7 @@ except Exception:
 
 def on_closing():
     if index:
-        quicksave_path = os.path.join(os.path.dirname(sys.executable), "quicksave.index")
+        quicksave_path = get_quicksave_path()
         save_index(quicksave_path)
     window.destroy()
 
@@ -395,7 +436,12 @@ directory_menu = tk.Menu(window, tearoff=0)
 directory_menu.add_command(label="Delete", command=delete_directory)
 
 # Bind the right-click event to show the menu
-directory_listbox.bind("<Button-3>", show_directory_menu)
+if sys.platform == "darwin":  # macOS
+    listbox.bind("<Button-2>", show_listbox_menu)  # Control+click or right-click on Mac
+    directory_listbox.bind("<Button-2>", show_directory_menu)
+else:  # Windows/Linux
+    listbox.bind("<Button-3>", show_listbox_menu)
+    directory_listbox.bind("<Button-3>", show_directory_menu)
 
 # Place the info bar at the bottom of the window
 info_bar.grid(row=3, column=0, columnspan=5, sticky="ew")
@@ -412,9 +458,10 @@ listbox.bind("<Button-3>", show_listbox_menu)
 
 #Loads the quicksave on start. If there is no quicksave, index will be empty. 
 try:
-    quicksave_path = os.path.join(os.path.dirname(sys.executable), "quicksave.index")
+    quicksave_path = get_quicksave_path()
     load_index(quicksave_path)
-except Exception:
+except Exception as e:
+    print(f"Error loading quicksave: {e}")
     index = []
 
 # Load the GUI

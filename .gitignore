@@ -160,5 +160,10 @@ cython_debug/
 #.idea/
 
 
+# OS Related items
+.DS_Store
+
 # indexer specific items
 *.index
+indexer_a*.py
+indexer_b*.py
